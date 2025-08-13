@@ -1,0 +1,108 @@
+version: '3.8'
+
+networks:
+  # ставим обязательно первым cassandra_management_net
+  cassandra_bridge_net: 
+    driver: bridge # Docker сам создаст эту внутреннюю бридж-сеть
+  cassandra_macvlan_net:
+    external: true
+  
+services:
+  cassandra-1:
+    image: cassandra-ssh:latest 
+    container_name: cassandra-1
+    hostname: cassandra-1
+    networks:
+      cassandra_bridge_net: {} # Добавляем вторую сеть (для связи с хостом)
+      cassandra_macvlan_net:
+        ipv4_address: 192.168.1.200
+    ports:
+      - "22200:22"
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=MyCluster
+      - CASSANDRA_SEEDS=192.168.1.200
+      - CASSANDRA_LISTEN_ADDRESS=192.168.1.200
+      - CASSANDRA_BROADCAST_ADDRESS=192.168.1.200
+      - CASSANDRA_RPC_ADDRESS=0.0.0.0
+      - CASSANDRA_BROADCAST_RPC_ADDRESS=192.168.1.200
+      - CASSANDRA_DC=dc1
+      - CASSANDRA_RACK=rack1
+    volumes:  # Добавляем для большего контроля за состоянием томов
+      - cass1_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "SHOW VERSION"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+
+  cassandra-2:
+    image: cassandra:latest
+    container_name: cassandra-2
+    hostname: cassandra-2
+    networks:
+      cassandra_bridge_net: {} 
+      cassandra_macvlan_net:
+        ipv4_address: 192.168.1.201
+    ports:
+      - "9043:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=MyCluster
+      - CASSANDRA_SEEDS=192.168.1.200
+      - CASSANDRA_LISTEN_ADDRESS=192.168.1.201
+      - CASSANDRA_BROADCAST_ADDRESS=192.168.1.201
+      - CASSANDRA_RPC_ADDRESS=0.0.0.0
+      - CASSANDRA_BROADCAST_RPC_ADDRESS=192.168.1.201
+      - CASSANDRA_DC=dc1
+      - CASSANDRA_RACK=rack1
+    volumes:
+      - cass2_data:/var/lib/cassandra
+    depends_on:
+      cassandra-1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "SHOW VERSION"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+
+  cassandra-3:
+    image: cassandra:latest
+    container_name: cassandra-3
+    hostname: cassandra-3
+    networks:
+      cassandra_bridge_net: {} 
+      cassandra_macvlan_net:
+        ipv4_address: 192.168.1.202
+    ports:
+      - "9044:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=MyCluster
+      - CASSANDRA_SEEDS=192.168.1.200
+      - CASSANDRA_LISTEN_ADDRESS=192.168.1.202
+      - CASSANDRA_BROADCAST_ADDRESS=192.168.1.202
+      - CASSANDRA_RPC_ADDRESS=0.0.0.0
+      - CASSANDRA_BROADCAST_RPC_ADDRESS=192.168.1.202
+      - CASSANDRA_DC=dc1
+      - CASSANDRA_RACK=rack1
+    volumes:
+      - cass3_data:/var/lib/cassandra
+    depends_on:
+      cassandra-2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "SHOW VERSION"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+
+volumes:
+  cass1_data:
+  cass2_data:
+  cass3_data:

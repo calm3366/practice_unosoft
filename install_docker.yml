@@ -1,0 +1,56 @@
+---
+- name: Установка Docker
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Установка зависимостей
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - software-properties-common
+          - net-tools
+        state: present
+        update_cache: true
+
+    - name: Добавление GPG-ключа Docker
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Добавление репозитория Docker
+      apt_repository:
+        repo: "deb [arch=arm64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker
+
+    - name: Обновление кэша APT
+      apt:
+        update_cache: true
+
+    - name: Установка Docker CE
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+
+    - name: Добавление пользователя vagrant в группу docker
+      user:
+        name: vagrant
+        groups: docker
+        append: true
+
+    - name: Проверка установки Docker
+      command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Вывод версии Docker
+      debug:
+        msg: "Установлен Docker: {{ docker_version.stdout }}"
