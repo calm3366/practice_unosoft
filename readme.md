@@ -39,7 +39,17 @@ sudo ./run.sh
 
 
 #### Пробуем подключиться по SSH c машины A
-`ssh cassandra@127.0.0.1 -p 22200`
+Добавляем интерфейс, правило и маршрут для него 
+```
+sudo ip link add link eth1 mac0 type macvlan mode bridge
+sudo ip addr add 192.168.1.199/24 dev mac0
+sudo ip link set mac0 up
+
+sudo ip rule add from 192.168.1.199 table 100
+sudo ip route add 192.168.1.0/24 dev mac0 src 192.168.1.199 table 100
+```
+Пробуем (явно указываем что подключаемся через созданный интерфейс)
+`ssh -b 192.168.1.199 cassandra@192.168.1.200`
 
 
 ## Подключение с машины B через cqlsh к 192.168.1.200
