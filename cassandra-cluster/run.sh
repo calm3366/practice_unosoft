@@ -71,7 +71,8 @@ docker exec cassandra-1 nodetool status || true
 cat <<EOF
 Готово.
 
-- Доступ к cassandra-1 по SSH (если образ cassandra-ssh): ssh cassandra@127.0.0.1 -p 22200
+- Доступ к cassandra-1 по SSH: ssh -b 192.168.1.199 cassandra@192.168.1.200 
+- ### Не забыть создать перед подключением новый интерфейс macvlan и маршрут для него!
 - Доступ к CQL:
   - cassandra-1: 127.0.0.1:9042
   - cassandra-2: 127.0.0.1:9043
